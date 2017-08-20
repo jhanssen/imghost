@@ -1,4 +1,4 @@
-/*global module,require,process,__dirname*/
+/*global module,require,process,Buffer,__dirname*/
 
 const express = require("express");
 const multer = require("multer");
@@ -9,6 +9,7 @@ const data = {
     mongoose: undefined,
     gridfs: undefined,
     User: undefined,
+    Image: undefined,
     updateOptions: { upsert: true, new: true, setDefaultsOnInsert: true }
 };
 
@@ -53,6 +54,11 @@ function ensureAuthenticated(req, res, next) {
 
 module.exports = function(mongoose, option) {
     data.mongoose = mongoose;
+
+    // buggy grid_store?
+    if (!mongoose.connection.options)
+        mongoose.connection.options = {};
+
     data.gridfs = require("mongoose-gridfs")({
         collection: "fs",
         model: "Image",
@@ -147,6 +153,50 @@ module.exports = function(mongoose, option) {
             // this is bad, remove images
             console.error("unable to find user", err);
             remove("unable to remove images (1)");
+        });
+    });
+    app.get("/images", ensureAuthenticated, (req, res) => {
+        data.User.findOne({ email: req.user.email }, { images: true }).then(images => {
+            if (typeof images !== "object" || !(images.images instanceof Array))
+                throw `Unable to find user ${req.user.email}`;
+            let out = "";
+            for (let i = 0; i < images.images.length; ++i) {
+                out += `<div><img src="/image/${images.images[i]}"></img></div>`;
+            }
+            console.log("faff", out);
+            res.send(out);
+        }).catch(err => {
+            console.error(`unable to get images for ${req.user.email}`);
+            res.sendStatus(500);
+        });
+    });
+    app.get("/image/:id", (req, res) => {
+        //data.Image.findOne({ _id: req.params.id }
+        const id = new mongoose.Types.ObjectId(req.params.id);
+        console.log(id);
+        // ugh
+        data.gridfs.storage.findOne({ _id: id }, (err, file) => {
+            if (err) {
+                console.error("nope");
+                res.sendStatus(500);
+                return;
+            }
+            // console.log(file);
+            res.setHeader("content-type", file.contentType);
+            res.setHeader("content-length", file.length);
+            const stream = data.gridfs.readById(id);
+            stream.on("error", err => {
+                console.error(err);
+                res.end();
+            });
+            stream.on("data", data => {
+                res.write(data);
+                //console.log(typeof data, data instanceof Buffer);
+            });
+            stream.on("close", () => {
+                console.log("done");
+                res.end();
+            });
         });
     });
 
