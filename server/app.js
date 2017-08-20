@@ -48,7 +48,7 @@ function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         next(null);
     } else {
-        res.redirect('/auth');
+        res.sendStatus(401);
     }
 }
 
@@ -96,22 +96,23 @@ module.exports = function(mongoose, option) {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    app.get("/", ensureAuthenticated, (req, res) => {
+    const router = express.Router();
+    router.get("/", ensureAuthenticated, (req, res) => {
         res.send("Hello world");
     });
 
-    app.get("/auth", (req, res) => {
-        let out = "";
-        enabledAuths.forEach(auth => {
-            out += `<div><a href="/auth/${auth}">${auth}</a></div>`;
-        });
-        res.send(out);
+    router.get("/auth", (req, res) => {
+        // let out = {};
+        // enabledAuths.forEach(auth => {
+        //     out += `<div><a href="/auth/${auth}">${auth}</a></div>`;
+        // });
+        res.send(enabledAuths);
     });
 
     if (enabledAuths.indexOf("google") !== -1) {
         console.log("Setting up Google auth routes");
-        app.get("/auth/google", passport.authenticate("google", { scope: ["profile","email"] }));
-        app.get('/auth/google/callback',
+        router.get("/auth/google", passport.authenticate("google", { scope: ["profile","email"] }));
+        router.get('/auth/google/callback',
                 passport.authenticate('google', { failureRedirect: '/auth' }),
                 function(req, res) {
                     // Successful authentication, redirect home.
@@ -119,10 +120,10 @@ module.exports = function(mongoose, option) {
                 });
     }
 
-    app.get("/images/upload", ensureAuthenticated, (req, res) => {
+    router.get("/images/upload", ensureAuthenticated, (req, res) => {
         res.sendFile(path.join(__dirname + "/files/upload.html"));
     });
-    app.post("/images/upload", ensureAuthenticated, upload.array("photos", 12), (req, res) => {
+    router.post("/images/upload", ensureAuthenticated, upload.array("photos", 12), (req, res) => {
         const images = req.files.map(file => {
             return file.id;
         });
@@ -143,7 +144,7 @@ module.exports = function(mongoose, option) {
             data.User.findOneAndUpdate({ email: user.email }, { $push: { images: { $each: images } } }).then(doc => {
                 if (!doc)
                     throw `Unable to find user ${user.email} (2)`;
-                res.send("ok");
+                res.send({ ok: true });
             }).catch(err => {
                 // also bad, remove images
                 console.error("unable to update user", err);
@@ -155,22 +156,22 @@ module.exports = function(mongoose, option) {
             remove("unable to remove images (1)");
         });
     });
-    app.get("/images", ensureAuthenticated, (req, res) => {
+    router.get("/images", ensureAuthenticated, (req, res) => {
         data.User.findOne({ email: req.user.email }, { images: true }).then(images => {
             if (typeof images !== "object" || !(images.images instanceof Array))
                 throw `Unable to find user ${req.user.email}`;
-            let out = "";
-            for (let i = 0; i < images.images.length; ++i) {
-                out += `<div><a href="/image/${images.images[i]}"><img src="/image/${images.images[i]}" height="100"></img></a></div>`;
-            }
-            console.log("faff", out);
-            res.send(out);
+            // let out = [];
+            // for (let i = 0; i < images.images.length; ++i) {
+            //     out += `<div><a href="/image/${images.images[i]}"><img src="/image/${images.images[i]}" height="100"></img></a></div>`;
+            // }
+            // console.log("faff", out);
+            res.send(images.images);
         }).catch(err => {
             console.error(`unable to get images for ${req.user.email}`);
             res.sendStatus(500);
         });
     });
-    app.get("/image/:id", (req, res) => {
+    router.get("/image/:id", (req, res) => {
         //data.Image.findOne({ _id: req.params.id }
         const id = new mongoose.Types.ObjectId(req.params.id);
         console.log(id);
@@ -199,6 +200,8 @@ module.exports = function(mongoose, option) {
             });
         });
     });
+
+    app.use("/api/v1", router);
 
     const port = option.int("port", 3001);
     app.listen(port, () => {
