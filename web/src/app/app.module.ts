@@ -7,7 +7,6 @@ import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { ApiService } from './api.service';
-import { DragService } from './drag.service';
 import { DropTargetDirective } from './drop-target.directive';
 import { StateService } from './state.service';
 import { UploadComponent } from './upload/upload.component';
@@ -24,7 +23,7 @@ import { UploadComponent } from './upload/upload.component';
         FormsModule,
         HttpModule
     ],
-    providers: [ApiService, DragService, StateService],
+    providers: [ApiService, StateService],
     bootstrap: [AppComponent]
 })
 export class AppModule { }

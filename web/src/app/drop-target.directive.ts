@@ -7,16 +7,7 @@ export class DropTargetDirective {
     constructor() {
     }
 
-    @Input()
-    set appDropTarget(options: DropTargetOptions) {
-        if (options) {
-            this.options = options;
-        }
-    }
-
     @Output('appDrop') drop = new EventEmitter();
-
-    private options: DropTargetOptions = {};
 
     @HostListener('dragenter', ['$event'])
     @HostListener('dragover', ['$event'])
@@ -31,8 +22,4 @@ export class DropTargetDirective {
         event.stopPropagation();
         this.drop.next(event.dataTransfer);
     }
-}
-
-export interface DropTargetOptions {
-    zone?: string;
 }
