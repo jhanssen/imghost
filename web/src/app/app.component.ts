@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ApiService } from './api.service';
+import { StateService } from './state.service';
 
 @Component({
     selector: 'app-root',
@@ -13,7 +14,18 @@ export class AppComponent {
     images = undefined;
     uploading = false;
 
-    constructor(private api: ApiService) {
+    constructor(private api: ApiService, private state: StateService) {
+        this.refresh();
+        this.state.get("uploading").subscribe(value => {
+            if (this.uploading && !value) {
+                // refresh images
+                this.refresh();
+            }
+            this.uploading = value;
+        });
+    }
+
+    refresh() {
         this.api.get("/images").subscribe(data => {
             if (data.status === 401) {
                 this.authenticated = false;
@@ -30,6 +42,6 @@ export class AppComponent {
     }
 
     upload() {
-        this.uploading = true;
+        this.state.set("uploading", true);
     }
 }

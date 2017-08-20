@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
+import { StateService } from '../state.service';
 
 @Component({
     selector: 'app-upload',
@@ -9,7 +10,7 @@ import { ApiService } from '../api.service';
 export class UploadComponent implements OnInit {
     pendingUploads: Array<any> = [];
 
-    constructor(private api: ApiService) { }
+    constructor(private api: ApiService, private state: StateService) { }
 
     ngOnInit() {
     }
@@ -19,6 +20,7 @@ export class UploadComponent implements OnInit {
         // this.pendingUploads
         this.api.upload("/images/upload", "photos", this.pendingUploads).subscribe(data => {
             console.log("uploaded?", data);
+            this.state.set("uploading", false);
         });
     }
 

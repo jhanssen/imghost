@@ -9,6 +9,7 @@ import { AppComponent } from './app.component';
 import { ApiService } from './api.service';
 import { DragService } from './drag.service';
 import { DropTargetDirective } from './drop-target.directive';
+import { StateService } from './state.service';
 import { UploadComponent } from './upload/upload.component';
 
 @NgModule({
@@ -23,7 +24,7 @@ import { UploadComponent } from './upload/upload.component';
         FormsModule,
         HttpModule
     ],
-    providers: [ApiService, DragService],
+    providers: [ApiService, DragService, StateService],
     bootstrap: [AppComponent]
 })
 export class AppModule { }
