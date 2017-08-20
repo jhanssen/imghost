@@ -4,12 +4,14 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const passport = require("passport");
+const sharp = require("sharp");
 
 const data = {
     mongoose: undefined,
     gridfs: undefined,
     User: undefined,
     Image: undefined,
+    ResizedImage: {},
     updateOptions: { upsert: true, new: true, setDefaultsOnInsert: true }
 };
 
@@ -52,6 +54,89 @@ function ensureAuthenticated(req, res, next) {
     }
 }
 
+function resize(id, width)
+{
+    return new Promise((resolve, reject) => {
+        if (!(width in data.ResizedImage)) {
+            reject(new Error(`${width} not a valid resize`));
+            return;
+        }
+        const ResizedImage = data.ResizedImage[width];
+
+        ResizedImage.gridfs.findOne({ root: ResizedImage.collection, _id: id }, (err, file) => {
+            console.log("found already?", err, file);
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            if (file) {
+                resolve({ file: file, stream: ResizedImage.gridfs.readById(id) });
+            } else {
+                data.gridfs.findOne({ _id: id }, (err, file) => {
+                    console.log("found original?", err, file);
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    console.log("creating resize object for", width, ResizedImage.height);
+                    const readable = data.gridfs.readById(id);//.pipe(resize);
+                    let buffer = undefined;
+                    let rejected = false;
+
+                    // sharps stream handling really sucks,
+                    // make one buffer out of the stream for now
+                    readable.on("error", err => {
+                        console.log("readable err", err);
+                        rejected = true;
+                        reject(err);
+                    });
+                    readable.on("data", data => {
+                        if (buffer) {
+                            buffer = Buffer.concat([buffer, data]);
+                        } else {
+                            buffer = data;
+                        }
+                        console.log("readable data");
+                    });
+                    readable.on("close", () => {
+                        if (rejected)
+                            return;
+                        if (!(buffer instanceof Buffer)) {
+                            console.error("no buffer?");
+                            reject(new Error("no buffer"));
+                            return;
+                        }
+                        console.log("readable close");
+                        const sharpable = sharp(buffer).resize(width, ResizedImage.height).max();
+                        console.log("writing...");
+                        const writable = ResizedImage.gridfs.write({
+                            _id: file._id,
+                            filename: file.filename,
+                            contentType: file.contentType
+                        }, sharpable);
+                        writable.on("error", err => {
+                            console.log("error", err);
+                            rejected = true;
+                            reject(err);
+                        });
+                        writable.on("close", file => {
+                            if (rejected)
+                                return;
+                            console.log("saved", file);
+                            if (file) {
+                                resolve({ file: file, stream: ResizedImage.gridfs.readById(id) });
+                            } else {
+                                reject(new Error("Unable to store resized image?"));
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    });
+}
+
 module.exports = function(mongoose, option) {
     data.mongoose = mongoose;
 
@@ -62,9 +147,23 @@ module.exports = function(mongoose, option) {
     data.gridfs = require("mongoose-gridfs")({
         collection: "fs",
         model: "Image",
-        mongooseConnection: mongoose.connection
+        mongooseConnection: mongoose.connection.db
     });
     data.Image = data.gridfs.model;
+
+    [320, 480, 640, 960].forEach(maxw => {
+        const resized = {};
+        resized.height = maxw * 0.75;
+        resized.collection = `resize${maxw}`;
+        resized.gridfs = require("mongoose-gridfs")({
+            collection: resized.collection,
+            model: `Image${maxw}`,
+            mongooseConnection: mongoose.connection.db
+        });
+        resized.model = resized.gridfs.model;
+        data.ResizedImage[maxw] = resized;
+    });
+
     data.User = mongoose.model("User", {
         email: String,
         displayName: String,
@@ -171,8 +270,7 @@ module.exports = function(mongoose, option) {
         //data.Image.findOne({ _id: req.params.id }
         const id = new mongoose.Types.ObjectId(req.params.id);
         console.log(id);
-        // ugh
-        data.gridfs.storage.findOne({ _id: id }, (err, file) => {
+        data.gridfs.findOne({ _id: id }, (err, file) => {
             if (err) {
                 console.error("nope");
                 res.sendStatus(500);
@@ -194,6 +292,33 @@ module.exports = function(mongoose, option) {
                 console.log("done");
                 res.end();
             });
+        });
+    });
+    router.get("/resized/:width/:id", (req, res) => {
+        const width = parseInt(req.params.width);
+        if (!(width in data.ResizedImage)) {
+            res.sendStatus(404);
+            return;
+        }
+        const id = new mongoose.Types.ObjectId(req.params.id);
+        resize(id, width).then(data => {
+            res.setHeader("content-type", data.file.contentType);
+            res.setHeader("content-length", data.file.length);
+            data.stream.on("error", err => {
+                console.error(err);
+                res.end();
+            });
+            data.stream.on("data", data => {
+                res.write(data);
+                //console.log(typeof data, data instanceof Buffer);
+            });
+            data.stream.on("close", () => {
+                console.log("done");
+                res.end();
+            });
+        }).catch(err => {
+            console.error("exception?", err);
+            res.sendStatus(500);
         });
     });
 
