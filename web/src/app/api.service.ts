@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Http, Response } from '@angular/http';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject } from 'rxjs/Rx';
 import 'rxjs/add/operator/map';
 
 @Injectable()
@@ -12,6 +14,9 @@ export class ApiService {
             if (res.status < 200 || res.status >= 300)
                 return { status: status, error: true };
             return res.json();
+        }).catch((err: HttpErrorResponse) => {
+            const subject = new BehaviorSubject({ status: err.status, error: true });
+            return subject.asObservable();
         });
     }
 }

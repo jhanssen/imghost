@@ -1,3 +1,17 @@
 <div style="text-align:center">
   <h1>Welcome to {{title}}!</h1>
 </div>
+
+<div *ngIf="!authenticated">
+  <p>Authenticate here</p>
+  <div *ngFor="let authenticator of authenticators">
+    <div><a href="/api/v1/auth/{{authenticator}}">{{authenticator}}</a></div>
+  </div>
+</div>
+<div *ngIf="authenticated">
+  <div *ngIf="images">
+    <div *ngFor="let image of images">
+      <a href="/api/v1/image/{{image}}"><img src="/api/v1/image/{{image}}" height="100"></a>
+    </div>
+  </div>
+</div>
