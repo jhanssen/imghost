@@ -46,6 +46,16 @@ passport.deserializeUser(function(id, done) {
     */
 });
 
+function makeObjectID(id) {
+    if (id instanceof data.mongoose.Types.ObjectId)
+        return id;
+    try {
+        return new data.mongoose.Types.ObjectId(id);
+    } catch (err) {
+        return undefined;
+    }
+}
+
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         next(null);
@@ -79,36 +89,33 @@ function resize(id, width)
                         reject(err);
                         return;
                     }
+                    if (!file) {
+                        reject(new Error("No such file"));
+                        return;
+                    }
                     console.log("creating resize object for", width, ResizedImage.height);
                     const readable = data.gridfs.readById(id);//.pipe(resize);
-                    let buffer = undefined;
+                    let buffers = [];
                     let rejected = false;
 
                     // sharps stream handling really sucks,
                     // make one buffer out of the stream for now
                     readable.on("error", err => {
-                        console.log("readable err", err);
                         rejected = true;
                         reject(err);
                     });
                     readable.on("data", data => {
-                        if (buffer) {
-                            buffer = Buffer.concat([buffer, data]);
-                        } else {
-                            buffer = data;
-                        }
-                        console.log("readable data");
+                        buffers.push(data);
                     });
                     readable.on("close", () => {
                         if (rejected)
                             return;
-                        if (!(buffer instanceof Buffer)) {
-                            console.error("no buffer?");
+                        if (!buffers.length) {
                             reject(new Error("no buffer"));
                             return;
                         }
                         console.log("readable close");
-                        const sharpable = sharp(buffer).resize(width, ResizedImage.height).max();
+                        const sharpable = sharp(Buffer.concat(buffers)).resize(width, ResizedImage.height).max();
                         console.log("writing...");
                         const writable = ResizedImage.gridfs.write({
                             _id: file._id,
@@ -268,7 +275,11 @@ module.exports = function(mongoose, option) {
     });
     router.get("/image/:id", (req, res) => {
         //data.Image.findOne({ _id: req.params.id }
-        const id = new mongoose.Types.ObjectId(req.params.id);
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
         console.log(id);
         data.gridfs.findOne({ _id: id }, (err, file) => {
             if (err) {
@@ -300,7 +311,11 @@ module.exports = function(mongoose, option) {
             res.sendStatus(404);
             return;
         }
-        const id = new mongoose.Types.ObjectId(req.params.id);
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
         resize(id, width).then(data => {
             res.setHeader("content-type", data.file.contentType);
             res.setHeader("content-length", data.file.length);
