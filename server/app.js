@@ -91,7 +91,6 @@ module.exports = function(mongoose, option) {
     });
 
     const app = express();
-    app.use("/files", express.static(path.join(__dirname + "/files")));
     app.use(require('express-session')({ secret: sessionSecret, resave: true, saveUninitialized: true }));
     app.use(passport.initialize());
     app.use(passport.session());
@@ -120,9 +119,6 @@ module.exports = function(mongoose, option) {
                 });
     }
 
-    router.get("/images/upload", ensureAuthenticated, (req, res) => {
-        res.sendFile(path.join(__dirname + "/files/upload.html"));
-    });
     router.post("/images/upload", ensureAuthenticated, upload.array("photos", 12), (req, res) => {
         const images = req.files.map(file => {
             return file.id;

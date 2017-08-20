@@ -11,6 +11,7 @@ export class AppComponent {
     authenticated = true;
     authenticators: Array<string> = [];
     images = undefined;
+    uploading = false;
 
     constructor(private api: ApiService) {
         this.api.get("/images").subscribe(data => {
@@ -26,5 +27,9 @@ export class AppComponent {
                 this.images = data;
             }
         });
+    }
+
+    upload() {
+        this.uploading = true;
     }
 }
