@@ -1,0 +1,5 @@
+<div class="wrapper">
+  <div class="item" *ngFor="let image of images">
+    <a href="/api/v1/image/{{image}}"><img src="/api/v1/resized/480/{{image}}"></a>
+  </div>
+</div>

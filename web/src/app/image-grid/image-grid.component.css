@@ -1,0 +1,19 @@
+.wrapper {
+    display: flex;
+    flex-flow: row wrap;
+    background-color: #fff;
+    color: #444;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0;
+    margin: 0;
+}
+
+.item {
+    background-color: #ddd;
+    color: #fff;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 0px 10px 10px 0px;
+    font-size: 150%;
+}

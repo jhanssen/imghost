@@ -12,9 +12,7 @@
   <div *ngIf="!uploading">
     <button (click)="upload()">Upload</button>
     <div *ngIf="images">
-      <div *ngFor="let image of images">
-	<a href="/api/v1/image/{{image}}"><img src="/api/v1/image/{{image}}" height="100"></a>
-      </div>
+      <app-image-grid [images]="images"></app-image-grid>
     </div>
   </div>
   <div *ngIf="uploading">

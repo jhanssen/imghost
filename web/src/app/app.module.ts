@@ -10,12 +10,14 @@ import { ApiService } from './api.service';
 import { DropTargetDirective } from './drop-target.directive';
 import { StateService } from './state.service';
 import { UploadComponent } from './upload/upload.component';
+import { ImageGridComponent } from './image-grid/image-grid.component';
 
 @NgModule({
     declarations: [
         AppComponent,
         DropTargetDirective,
-        UploadComponent
+        UploadComponent,
+        ImageGridComponent
     ],
     imports: [
         BrowserAnimationsModule,
