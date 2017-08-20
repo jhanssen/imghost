@@ -97,8 +97,8 @@ module.exports = function(mongoose, option) {
     app.use(passport.session());
 
     const router = express.Router();
-    router.get("/", ensureAuthenticated, (req, res) => {
-        res.send("Hello world");
+    router.get("/", (req, res) => {
+        res.redirect("/images");
     });
 
     router.get("/auth", (req, res) => {
@@ -111,7 +111,7 @@ module.exports = function(mongoose, option) {
 
     if (enabledAuths.indexOf("google") !== -1) {
         console.log("Setting up Google auth routes");
-        router.get("/auth/google", passport.authenticate("google", { scope: ["profile","email"] }));
+        router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
         router.get('/auth/google/callback',
                 passport.authenticate('google', { failureRedirect: '/auth' }),
                 function(req, res) {
