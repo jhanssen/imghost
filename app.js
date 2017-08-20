@@ -161,7 +161,7 @@ module.exports = function(mongoose, option) {
                 throw `Unable to find user ${req.user.email}`;
             let out = "";
             for (let i = 0; i < images.images.length; ++i) {
-                out += `<div><img src="/image/${images.images[i]}"></img></div>`;
+                out += `<div><a href="/image/${images.images[i]}"><img src="/image/${images.images[i]}" height="100"></img></a></div>`;
             }
             console.log("faff", out);
             res.send(out);
