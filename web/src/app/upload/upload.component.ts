@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
+import { StateService } from '../state.service';
 import { ModalService } from '../modal.service';
 
 @Component({
@@ -10,7 +11,7 @@ import { ModalService } from '../modal.service';
 export class UploadComponent implements OnInit {
     pendingUploads: Array<any> = [];
 
-    constructor(private api: ApiService, private modals: ModalService) { }
+    constructor(private api: ApiService, private state: StateService, private modals: ModalService) { }
 
     ngOnInit() {
     }
@@ -27,6 +28,8 @@ export class UploadComponent implements OnInit {
             preview.parentNode.replaceChild(copy, preview);
 
             this.modals.close("upload");
+
+            this.state.set("uploaded", true);
         });
     }
 

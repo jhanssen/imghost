@@ -16,13 +16,12 @@ export class AppComponent {
 
     constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.refresh();
-        // this.state.get("uploading").subscribe(value => {
-        //     if (this.uploading && !value) {
-        //         // refresh images
-        //         this.refresh();
-        //     }
-        //     this.uploading = value;
-        // });
+        this.state.get("uploaded").subscribe(value => {
+            if (value) {
+                this.refresh();
+                this.state.set("uploaded", false);
+            }
+        });
     }
 
     refresh() {
