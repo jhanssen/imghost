@@ -29,7 +29,7 @@ export class UploadComponent implements OnInit {
 
             this.modals.close("upload");
 
-            this.state.set("uploaded", true);
+            this.state.set("refresh", true);
         });
     }
 

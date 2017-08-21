@@ -282,7 +282,7 @@ module.exports = function(mongoose, option) {
         }
         console.log(id);
         data.gridfs.findOne({ _id: id }, (err, file) => {
-            if (err) {
+            if (err || !file) {
                 console.error("nope");
                 res.sendStatus(500);
                 return;
@@ -333,6 +333,48 @@ module.exports = function(mongoose, option) {
             });
         }).catch(err => {
             console.error("exception?", err);
+            res.sendStatus(500);
+        });
+    });
+    router.get("/delete/:id", ensureAuthenticated, (req, res) => {
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
+        console.log("deleting", id);
+        // remove from user
+        data.User.findOneAndUpdate({ email: req.user.email }, { $pull: { images: id } }).then(doc => {
+            // verify that doc did contain the id, otherwise the user might be trying to do evil things
+            if (doc && doc.images instanceof Array && doc.images.indexOf(id) !== -1) {
+                // get all available gridfs
+                let gridfses = [data.gridfs];
+                for (let k in data.ResizedImage) {
+                    gridfses.push(data.ResizedImage[k].gridfs);
+                }
+                let offset = 0;
+                let next = () => {
+                    if (offset >= gridfses.length) {
+                        res.send({ ok: true });
+                        return;
+                    }
+                    const gridfs = gridfses[offset++];
+                    gridfs.unlinkById(id, (err, ok) => {
+                        if (err) {
+                            console.error("failed to unlink", err);
+                            res.sendStatus(500);
+                        } else {
+                            process.nextTick(next);
+                        }
+                    });
+                };
+                next();
+            } else {
+                console.error(`user ${req.user.email} tried to remove id ${id}`);
+                res.sendStatus(500);
+            }
+        }).catch(err => {
+            console.error("error removing from images", id);
             res.sendStatus(500);
         });
     });

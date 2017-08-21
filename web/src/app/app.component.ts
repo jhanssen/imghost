@@ -16,10 +16,10 @@ export class AppComponent {
 
     constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.refresh();
-        this.state.get("uploaded").subscribe(value => {
+        this.state.get("refresh").subscribe(value => {
             if (value) {
                 this.refresh();
-                this.state.set("uploaded", false);
+                this.state.set("refresh", false);
             }
         });
     }

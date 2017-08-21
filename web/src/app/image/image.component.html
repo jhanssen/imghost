@@ -3,3 +3,7 @@
     <img class="fit" src="/api/v1/image/{{image}}">
   </div>
 </div>
+<div>
+  <button md-raised-button (click)="close()">Close</button>
+  <button md-raised-button color="warn" (click)="deleteImage()">{{deleteText}}</button>
+</div>
