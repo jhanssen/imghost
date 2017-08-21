@@ -13,14 +13,16 @@ export class ImageComponent implements OnInit {
     deleteText: string = "Delete";
     resizes: Array<number>;
     host: string;
-    share: string = "";
+    share: string;
+    shareText: string = "";
 
     constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.state.get("image").subscribe(value => {
             //console.log("image", value);
             this.image = value
             this.deleteText = "Delete";
-            this.share = "";
+            this.shareText = "";
+            this.share = undefined;
         });
         this.api.get("/resizes").subscribe(data => {
             this.host = data.host;
@@ -37,13 +39,13 @@ export class ImageComponent implements OnInit {
 
     setShare(ev) {
         if (ev == "Full") {
-            this.share = `${this.host}/api/v1/image/${this.image}`;
+            this.shareText = `${this.host}/api/v1/image/${this.image}`;
         } else {
             const x = ev.indexOf("x");
             if (x === -1)
                 return;
             const w = parseInt(ev.substr(0, x));
-            this.share = `${this.host}/api/v1/resized/${w}/${this.image}`;
+            this.shareText = `${this.host}/api/v1/resized/${w}/${this.image}`;
         }
     }
 

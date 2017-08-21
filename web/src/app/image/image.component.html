@@ -8,12 +8,12 @@
   <div class="imagegrid">
     <button md-raised-button (click)="close()" class="imageitem">Close</button>
     <button md-raised-button color="warn" (click)="deleteImage()" class="imageitem">{{deleteText}}</button>
-    <md-select placeholder="Share" ngModel (ngModelChange)="setShare($event)" class="imageitem">
+    <md-select placeholder="Share" [ngModel]="share" (ngModelChange)="setShare($event); share = (share == undefined ? null : share)" class="imageitem">
       <md-option value="Full">Full</md-option>
       <md-option *ngFor="let resize of resizes" [value]="resize">{{resize}}</md-option>
     </md-select>
     <md-input-container class="md-block fill">
-      <input mdInput floatingPlaceholder="false" [value]="share">
+      <input mdInput floatingPlaceholder="false" [value]="shareText">
     </md-input-container>
   </div>
 </div>
