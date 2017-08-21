@@ -1,7 +1,3 @@
-<div style="text-align:center">
-  <h1>Welcome to {{title}}!</h1>
-</div>
-
 <div *ngIf="!authenticated">
   <p>Authenticate here</p>
   <div *ngFor="let authenticator of authenticators">
@@ -9,13 +5,23 @@
   </div>
 </div>
 <div *ngIf="authenticated">
-  <div *ngIf="!uploading">
-    <button (click)="upload()">Upload</button>
+  <div>
+    <md-toolbar>
+      {{title}}
+      <span class="fill"></span>
+      <button md-raised-button (click)="openModal('upload')">Upload</button>
+    </md-toolbar>
+    <div class="vertspace"></div>
     <div *ngIf="images">
       <app-image-grid [images]="images"></app-image-grid>
     </div>
   </div>
-  <div *ngIf="uploading">
-    <app-upload></app-upload>
-  </div>
+  <app-modal id="upload">
+    <div class="modal">
+      <div class="modal-body">
+	<app-upload></app-upload>
+      </div>
+    </div>
+    <div class="modal-background"></div>
+  </app-modal>
 </div>

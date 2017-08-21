@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ApiService } from './api.service';
 import { StateService } from './state.service';
+import { ModalService } from './modal.service';
 
 @Component({
     selector: 'app-root',
@@ -8,21 +9,20 @@ import { StateService } from './state.service';
     styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-    title = 'app';
+    title = 'Imghost';
     authenticated = true;
     authenticators: Array<string> = [];
     images = undefined;
-    uploading = false;
 
-    constructor(private api: ApiService, private state: StateService) {
+    constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.refresh();
-        this.state.get("uploading").subscribe(value => {
-            if (this.uploading && !value) {
-                // refresh images
-                this.refresh();
-            }
-            this.uploading = value;
-        });
+        // this.state.get("uploading").subscribe(value => {
+        //     if (this.uploading && !value) {
+        //         // refresh images
+        //         this.refresh();
+        //     }
+        //     this.uploading = value;
+        // });
     }
 
     refresh() {
@@ -41,7 +41,7 @@ export class AppComponent {
         });
     }
 
-    upload() {
-        this.state.set("uploading", true);
+    openModal(id: string) {
+        this.modals.open(id);
     }
 }
