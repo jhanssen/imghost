@@ -8,10 +8,12 @@ const sharp = require("sharp");
 
 const data = {
     mongoose: undefined,
+    host: undefined,
     gridfs: undefined,
     User: undefined,
     Image: undefined,
     ResizedImage: {},
+    resizes: [],
     updateOptions: { upsert: true, new: true, setDefaultsOnInsert: true }
 };
 
@@ -146,6 +148,7 @@ function resize(id, width)
 
 module.exports = function(mongoose, option) {
     data.mongoose = mongoose;
+    data.host = option("host");
 
     // buggy grid_store?
     if (!mongoose.connection.options)
@@ -169,6 +172,7 @@ module.exports = function(mongoose, option) {
         });
         resized.model = resized.gridfs.model;
         data.ResizedImage[maxw] = resized;
+        data.resizes.push(`${maxw}x${resized.height}`);
     });
 
     data.User = mongoose.model("User", {
@@ -335,6 +339,9 @@ module.exports = function(mongoose, option) {
             console.error("exception?", err);
             res.sendStatus(500);
         });
+    });
+    router.get("/resizes", ensureAuthenticated, (req, res) => {
+        res.send({ host: data.host, resizes: data.resizes });
     });
     router.get("/delete/:id", ensureAuthenticated, (req, res) => {
         const id = makeObjectID(req.params.id);

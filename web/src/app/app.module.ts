@@ -2,7 +2,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { HttpModule } from '@angular/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MdButtonModule, MdToolbarModule } from '@angular/material';
+import { MdButtonModule, MdToolbarModule, MdSelectModule, MdInputModule } from '@angular/material';
 import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
@@ -30,7 +30,9 @@ import { ImageComponent } from './image/image.component';
         FormsModule,
         HttpModule,
         MdButtonModule,
-        MdToolbarModule
+        MdToolbarModule,
+        MdSelectModule,
+        MdInputModule
     ],
     providers: [
         ApiService,

@@ -7,3 +7,12 @@ img.fit {
     max-height: 90vh;
     height: auto;
 }
+
+.imagegrid {
+    display: flex;
+    align-items: center;
+}
+
+.imageitem {
+    margin-right: 10px;
+}
