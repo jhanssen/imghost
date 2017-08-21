@@ -38,6 +38,7 @@ export class ImageComponent implements OnInit {
     }
 
     setShare(ev) {
+        this.share = ev;
         if (ev == "Full") {
             this.shareText = `${this.host}/api/v1/image/${this.image}`;
         } else {
