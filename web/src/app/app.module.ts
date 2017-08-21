@@ -13,6 +13,7 @@ import { ModalService } from './modal.service';
 import { UploadComponent } from './upload/upload.component';
 import { ImageGridComponent } from './image-grid/image-grid.component';
 import { ModalComponent } from './modal/modal.component';
+import { ImageComponent } from './image/image.component';
 
 @NgModule({
     declarations: [
@@ -20,7 +21,8 @@ import { ModalComponent } from './modal/modal.component';
         DropTargetDirective,
         UploadComponent,
         ImageGridComponent,
-        ModalComponent
+        ModalComponent,
+        ImageComponent
     ],
     imports: [
         BrowserAnimationsModule,

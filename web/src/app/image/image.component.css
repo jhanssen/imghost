@@ -1,0 +1,6 @@
+img.fit {
+    object-fit: contain;
+    object-position: 0 0;
+    max-width: 100%;
+    height: auto;
+}

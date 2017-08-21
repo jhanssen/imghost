@@ -4,7 +4,8 @@ import { BehaviorSubject } from 'rxjs/Rx';
 @Injectable()
 export class StateService {
     states: { [key: string]: BehaviorSubject<any> } = {
-        uploading: new BehaviorSubject<any>(false)
+        uploading: new BehaviorSubject<any>(false),
+        image: new BehaviorSubject<string>(undefined)
     };
 
     constructor() { }

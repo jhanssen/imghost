@@ -1,4 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
+import { StateService } from '../state.service';
+import { ModalService } from '../modal.service';
 
 @Component({
   selector: 'app-image-grid',
@@ -8,9 +10,16 @@ import { Component, OnInit, Input } from '@angular/core';
 export class ImageGridComponent implements OnInit {
     @Input('images') images: Array<string>;
 
-    constructor() {
+    constructor(private state: StateService, private modals: ModalService) {
     }
 
     ngOnInit() {
+    }
+
+    showImage(image: string) {
+        //console.log("showing", image);
+        this.state.set("image", image);
+        this.modals.open("image");
+        return false;
     }
 }
