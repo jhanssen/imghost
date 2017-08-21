@@ -3,6 +3,20 @@ app-modal {
     display: none;
 }
 
+app-modal .center-modal {
+    /* modal container fixed across whole screen */
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    /* z-index must be higher than .modal-background */
+    z-index: 1000;
+
+    /* enables scrolling for tall modals */
+    overflow: auto;
+}
+
 app-modal .modal {
     /* modal container fixed across whole screen */
     position: fixed;
@@ -20,7 +34,7 @@ app-modal .modal {
 
 app-modal .modal-body {
     padding: 20px;
-    background: #fff;
+    background: #eee;
 
     /* margin exposes part of the modal background */
     margin: 40px;

@@ -1,6 +1,9 @@
+div.container {
+    text-align: center;
+}
+
 img.fit {
-    object-fit: contain;
-    object-position: 0 0;
-    max-width: 100%;
+    max-width: 90vw;
+    max-height: 90vh;
     height: auto;
 }

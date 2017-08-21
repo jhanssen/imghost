@@ -28,7 +28,7 @@ export class ModalComponent implements OnInit, OnDestroy {
 
         // close modal on background click
         this.renderer.listen(this.el.nativeElement, 'click', (e: any) => {
-            if (e.target.matches(".modal")) {
+            if (e.target.matches(".modal") || e.target.matches(".modal-background")) {
                 this.close();
             }
         });
