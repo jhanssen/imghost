@@ -20,6 +20,11 @@ export class ImageConfigComponent implements OnInit {
     constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.state.get("configuring").subscribe(value => {
             this.configuring = value;
+            if (this.configuring) {
+                this.deleteText = "Delete";
+                this.shareText = "";
+                this.share = undefined;
+            }
         });
         this.state.get("image").subscribe(value => {
             this.image = value;
@@ -34,6 +39,8 @@ export class ImageConfigComponent implements OnInit {
     }
 
     setShare(ev) {
+        if (!this.configuring)
+            return;
         this.share = ev;
         if (ev == "Full") {
             this.shareText = `${this.host}/api/v1/image/${this.image}`;
@@ -47,6 +54,8 @@ export class ImageConfigComponent implements OnInit {
     }
 
     deleteImage() {
+        if (!this.configuring)
+            return;
         if (this.deleteText == "Delete") {
             this.deleteText = "Confirm";
         } else {
