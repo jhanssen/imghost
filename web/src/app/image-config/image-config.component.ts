@@ -23,6 +23,9 @@ export class ImageConfigComponent implements OnInit {
         });
         this.state.get("image").subscribe(value => {
             this.image = value;
+            this.deleteText = "Delete";
+            this.shareText = "";
+            this.share = undefined;
         });
         this.api.get("/resizes").subscribe(data => {
             this.host = data.host;

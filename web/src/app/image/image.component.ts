@@ -25,20 +25,12 @@ import { ModalService } from '../modal.service';
 })
 export class ImageComponent implements OnInit {
     image: string;
-    deleteText: string = "Delete";
-    resizes: Array<number>;
-    host: string;
-    share: string;
-    shareText: string = "";
     configState: string = "out";
 
     constructor(private api: ApiService, private state: StateService, private modals: ModalService) {
         this.state.get("image").subscribe(value => {
             //console.log("image", value);
             this.image = value
-            this.deleteText = "Delete";
-            this.shareText = "";
-            this.share = undefined;
         });
         this.state.get("modal").subscribe(value => {
             if (value === undefined) {
@@ -49,11 +41,6 @@ export class ImageComponent implements OnInit {
         this.state.get("configuring").subscribe(value => {
             if (value == false && this.configState == "in")
                 this.configState = "out";
-        });
-
-        this.api.get("/resizes").subscribe(data => {
-            this.host = data.host;
-            this.resizes = data.resizes;
         });
     }
 
@@ -72,32 +59,5 @@ export class ImageComponent implements OnInit {
     animationDone(event) {
         //console.log("done?", event);
         this.state.set("configuring", (event.toState === "in"));
-    }
-
-    setShare(ev) {
-        this.share = ev;
-        if (ev == "Full") {
-            this.shareText = `${this.host}/api/v1/image/${this.image}`;
-        } else {
-            const x = ev.indexOf("x");
-            if (x === -1)
-                return;
-            const w = parseInt(ev.substr(0, x));
-            this.shareText = `${this.host}/api/v1/resized/${w}/${this.image}`;
-        }
-    }
-
-    deleteImage() {
-        if (this.deleteText == "Delete") {
-            this.deleteText = "Confirm";
-        } else {
-            this.deleteText = "Delete";
-            // delete image
-            this.api.get(`/delete/${this.image}`).subscribe(data => {
-                console.log("deleted?", data);
-                this.modals.close("image");
-                this.state.set("refresh", true);
-            });
-        }
     }
 }
