@@ -33,7 +33,7 @@ app-modal .modal {
 }
 
 app-modal .modal-body {
-    padding: 20px;
+    padding: 5px 20px 20px 20px;
     background: #eee;
     border-radius: 5px;
 

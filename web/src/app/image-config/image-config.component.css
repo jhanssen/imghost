@@ -1,0 +1,29 @@
+:host {
+    position: absolute;
+    left: auto;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    min-width: 400px;
+    z-index: 1001;
+    background-color: #fff;
+    overflow: hidden;
+
+    padding: 5px 20px 20px 20px;
+    border-radius: 5px;
+
+    margin: 40px;
+}
+
+div.header {
+    display: flex;
+}
+
+.imagegrid {
+    display: flex;
+    align-items: center;
+}
+
+.imageitem {
+    margin-right: 10px;
+}

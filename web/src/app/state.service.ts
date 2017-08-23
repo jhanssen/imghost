@@ -5,7 +5,9 @@ import { BehaviorSubject } from 'rxjs/Rx';
 export class StateService {
     states: { [key: string]: BehaviorSubject<any> } = {
         refresh: new BehaviorSubject<boolean>(false),
-        image: new BehaviorSubject<string>(undefined)
+        configuring: new BehaviorSubject<boolean>(false),
+        image: new BehaviorSubject<string>(undefined),
+        modal: new BehaviorSubject<string>(undefined)
     };
 
     constructor() { }

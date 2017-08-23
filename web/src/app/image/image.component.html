@@ -1,19 +1,11 @@
+<div class="header">
+  <span class="fill"></span>
+  <button md-icon-button (click)="settings()"><span class="material-icons">settings</span></button>
+  <button md-icon-button (click)="close()"><span class="material-icons">cancel</span></button>
+</div>
 <div *ngIf="image">
   <div class="container">
     <img class="fit" src="/api/v1/image/{{image}}">
   </div>
 </div>
-<div>
-  <div class="vertspace"></div>
-  <div class="imagegrid">
-    <button md-raised-button (click)="close()" class="imageitem">Close</button>
-    <button md-raised-button color="warn" (click)="deleteImage()" class="imageitem">{{deleteText}}</button>
-    <md-select placeholder="Share" [ngModel]="share" (ngModelChange)="setShare($event); share = (share == undefined ? null : share)" class="imageitem">
-      <md-option value="Full">Full</md-option>
-      <md-option *ngFor="let resize of resizes" [value]="resize">{{resize}}</md-option>
-    </md-select>
-    <md-input-container class="md-block fill">
-      <input mdInput floatingPlaceholder="false" [value]="shareText">
-    </md-input-container>
-  </div>
-</div>
+<app-image-config [@slideInOut]="configState" (@slideInOut.done)="animationDone($event)"></app-image-config>

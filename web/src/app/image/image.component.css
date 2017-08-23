@@ -2,6 +2,10 @@ div.container {
     text-align: center;
 }
 
+div.header {
+    display: flex;
+}
+
 img.fit {
     max-width: 90vw;
     max-height: 85vh;

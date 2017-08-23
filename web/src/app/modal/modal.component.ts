@@ -1,6 +1,7 @@
 import { Component, ElementRef, Renderer, Input, OnInit, OnDestroy } from '@angular/core';
 
 import { ModalService } from '../modal.service';
+import { StateService } from '../state.service';
 
 @Component({
     selector: 'app-modal',
@@ -12,7 +13,10 @@ export class ModalComponent implements OnInit, OnDestroy {
     @Input() id: string;
     private body: HTMLBodyElement = undefined;
 
-    constructor(private modalService: ModalService, private el: ElementRef, private renderer: Renderer) { }
+    constructor(private modalService: ModalService, private el: ElementRef,
+                private renderer: Renderer, private state: StateService)
+    {
+    }
 
     ngOnInit(): void {
         this.body = document.querySelector("body");
@@ -48,11 +52,13 @@ export class ModalComponent implements OnInit, OnDestroy {
     open(): void {
         this.el.nativeElement.style.display = "block";
         this.body.classList.add('modal-open');
+        this.state.set("modal", this.id);
     }
 
     // close modal
     close(): void {
         this.el.nativeElement.style.display = "none";
         this.body.classList.remove('modal-open');
+        this.state.set("modal", undefined);
     }
 }

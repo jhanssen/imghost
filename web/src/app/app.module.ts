@@ -14,6 +14,7 @@ import { UploadComponent } from './upload/upload.component';
 import { ImageGridComponent } from './image-grid/image-grid.component';
 import { ModalComponent } from './modal/modal.component';
 import { ImageComponent } from './image/image.component';
+import { ImageConfigComponent } from './image-config/image-config.component';
 
 @NgModule({
     declarations: [
@@ -22,7 +23,8 @@ import { ImageComponent } from './image/image.component';
         UploadComponent,
         ImageGridComponent,
         ModalComponent,
-        ImageComponent
+        ImageComponent,
+        ImageConfigComponent
     ],
     imports: [
         BrowserAnimationsModule,
