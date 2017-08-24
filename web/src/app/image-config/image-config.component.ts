@@ -32,7 +32,7 @@ export class ImageConfigComponent implements OnInit {
             this.shareText = "";
             this.share = undefined;
         });
-        this.api.get("/resizes").subscribe(data => {
+        this.api.cached("/resizes").subscribe(data => {
             this.host = data.host;
             this.resizes = data.resizes;
         });
