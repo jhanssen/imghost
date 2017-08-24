@@ -351,9 +351,18 @@ module.exports = function(mongoose, option) {
     router.get("/resizes", ensureAuthenticated, (req, res) => {
         res.send({ host: data.host, resizes: data.resizes });
     });
-    router.get("/updatePermissions/:perms/:id", ensureAuthenticated, (req, res) => {
-        const perms = parseInt(req.params.perms);
-        if (isNaN(perms)) {
+    router.get("/meta/set/:key/:value/:id", ensureAuthenticated, (req, res) => {
+        let value;
+        const key = req.params.key;
+        switch (key) {
+        case "permissions":
+            value = parseInt(req.params.value);
+            if (isNaN(value)) {
+                res.sendStatus(500);
+                return;
+            }
+            break;
+        default:
             res.sendStatus(500);
             return;
         }
@@ -363,31 +372,54 @@ module.exports = function(mongoose, option) {
             return;
         }
         // check that this really is our image
-        data.User.findOne({ email: req.user.email }, { images: true }).then(images => {
-            if (typeof images !== "object" || !(images.images instanceof Array)) {
-                res.sendStatus(404);
-                return;
-            }
-            if (images.images.indexOf(id) === -1) {
+        data.User.findOne({ email: req.user.email, images: id }, { email: true }).then(doc => {
+            if (!doc) {
                 res.sendStatus(404);
                 return;
             }
             // we're good to update
-            data.Image.findOneAndUpdate({ _id: id }, { $set: { "metadata.permissions": perms } }, { new: true }).then(doc => {
+            data.Image.findOneAndUpdate({ _id: id }, { $set: { [`metadata.${key}`]: value } }, { new: true }).then(doc => {
                 try {
-                    if (doc.metadata.permissions === perms) {
+                    if (doc.metadata[key] === value) {
                         res.send({ ok: true });
                     } else {
-                        throw new Error(`Permission mismatch ${doc.metadata.permissions} ${perms}`);
+                        throw new Error(`metadata mismatch ${doc.metadata[key]} ${value}`);
                     }
-                } catch (e) {
-                    console.error(`error matching permissions for ${id}`, err);
+                } catch (err) {
+                    console.error(`error matching metadata for ${key} ${id}`, err);
                     res.sendStatus(500);
                 }
             }).catch(err => {
-                console.error(`error updating permissions for ${id}`, err);
+                console.error(`error updating metadata for ${key} ${id}`, err);
                 res.sendStatus(500);
             });
+        });
+    });
+    router.get("/meta/get/:id", ensureAuthenticated, (req, res) => {
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
+        // check that this really is our image
+        data.User.findOne({ email: req.user.email, images: id }, { email: true }).then(doc => {
+            if (!doc) {
+                res.sendStatus(404);
+                return;
+            }
+            data.Image.findOne({ _id: id }, { metadata: true }).then(doc => {
+                if (doc) {
+                    res.send(doc.metadata);
+                } else {
+                    res.sendStatus(500);
+                }
+            }).catch(err => {
+                console.error(`error getting metadata for ${id}`, err);
+                res.sendStatus(500);
+            });
+        }).catch(err => {
+            console.error(`error getting metadata (image) for ${id}`, err);
+            res.sendStatus(500);
         });
     });
     router.get("/delete/:id", ensureAuthenticated, (req, res) => {
