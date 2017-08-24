@@ -343,6 +343,45 @@ module.exports = function(mongoose, option) {
     router.get("/resizes", ensureAuthenticated, (req, res) => {
         res.send({ host: data.host, resizes: data.resizes });
     });
+    router.get("/updatePermissions/:perms/:id", ensureAuthenticated, (req, res) => {
+        const perms = parseInt(req.params.perms);
+        if (isNaN(perms)) {
+            res.sendStatus(500);
+            return;
+        }
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
+        // check that this really is our image
+        data.User.findOne({ email: req.user.email }, { images: true }).then(images => {
+            if (typeof images !== "object" || !(images.images instanceof Array)) {
+                res.sendStatus(404);
+                return;
+            }
+            if (images.images.indexOf(id) === -1) {
+                res.sendStatus(404);
+                return;
+            }
+            // we're good to update
+            data.Image.findOneAndUpdate({ _id: id }, { $set: { "metadata.permissions": perms } }, { new: true }).then(doc => {
+                try {
+                    if (doc.metadata.permissions === perms) {
+                        res.send({ ok: true });
+                    } else {
+                        throw new Error(`Permission mismatch ${doc.metadata.permissions} ${perms}`);
+                    }
+                } catch (e) {
+                    console.error(`error matching permissions for ${id}`, err);
+                    res.sendStatus(500);
+                }
+            }).catch(err => {
+                console.error(`error updating permissions for ${id}`, err);
+                res.sendStatus(500);
+            });
+        });
+    });
     router.get("/delete/:id", ensureAuthenticated, (req, res) => {
         const id = makeObjectID(req.params.id);
         if (!id) {
