@@ -189,7 +189,15 @@ module.exports = function(mongoose, option) {
     }
 
     const multerStorage = require("multer-gridfs-storage")({
-        db: connection.db
+        db: connection.db,
+        file: function(req, file) {
+            if (req.params.permissions) {
+                const perms = parseInt(req.params.permissions);
+                if (!isNaN(perms))
+                    return { metadata: { permissions: perms } };
+            }
+            return { metadata: { permissions: 0 } };
+        }
     });
     const upload = multer({ storage: multerStorage });
 
