@@ -48,6 +48,11 @@ passport.deserializeUser(function(id, done) {
     */
 });
 
+const Permission = {
+    Private: 0x0,
+    Public : 0x1
+};
+
 function makeObjectID(id) {
     if (id instanceof data.mongoose.Types.ObjectId)
         return id;
@@ -64,6 +69,35 @@ function ensureAuthenticated(req, res, next) {
     } else {
         res.sendStatus(401);
     }
+}
+
+function checkPermissions(id, email) {
+    return new Promise((resolve, reject) => {
+        data.Image.findOne({ _id: id }, { metadata: true }).then(doc => {
+            if (!doc) {
+                resolve(false);
+                return;
+            }
+            try {
+                if (doc.metadata.permissions & Permission.Public) {
+                    resolve(true);
+                    return;
+                }
+            } catch(_) {
+            }
+            if (email) {
+                data.User.findOne({ email: email, images: id }, { email: true }).then(doc => {
+                    resolve(doc ? true : false);
+                }).catch(err => {
+                    reject(err);
+                });
+            } else {
+                resolve(false);
+            }
+        }).catch(err => {
+            reject(err);
+        });
+    });
 }
 
 function resize(id, width)
@@ -293,59 +327,77 @@ module.exports = function(mongoose, option) {
             return;
         }
         console.log(id);
-        data.gridfs.findOne({ _id: id }, (err, file) => {
-            if (err || !file) {
-                console.error("nope");
-                res.sendStatus(500);
+        checkPermissions(id, req.user && req.user.email).then(ok => {
+            if (!ok) {
+                res.sendStatus(404);
                 return;
             }
-            // console.log(file);
-            res.setHeader("content-type", file.contentType);
-            res.setHeader("content-length", file.length);
-            const stream = data.gridfs.readById(id);
-            stream.on("error", err => {
-                console.error(err);
-                res.end();
+            data.gridfs.findOne({ _id: id }, (err, file) => {
+                if (err || !file) {
+                    console.error("nope");
+                    res.sendStatus(500);
+                    return;
+                }
+                // console.log(file);
+                res.setHeader("content-type", file.contentType);
+                res.setHeader("content-length", file.length);
+                const stream = data.gridfs.readById(id);
+                stream.on("error", err => {
+                    console.error(err);
+                    res.end();
+                });
+                stream.on("data", data => {
+                    res.write(data);
+                    //console.log(typeof data, data instanceof Buffer);
+                });
+                stream.on("close", () => {
+                    console.log("done");
+                    res.end();
+                });
             });
-            stream.on("data", data => {
-                res.write(data);
-                //console.log(typeof data, data instanceof Buffer);
-            });
-            stream.on("close", () => {
-                console.log("done");
-                res.end();
-            });
+        }).catch(err => {
+            console.error("error checking permissions", id, err);
+            res.sendStatus(404);
         });
     });
     router.get("/resized/:width/:id", (req, res) => {
-        const width = parseInt(req.params.width);
-        if (!(width in data.ResizedImage)) {
-            res.sendStatus(404);
-            return;
-        }
         const id = makeObjectID(req.params.id);
         if (!id) {
             res.sendStatus(500);
             return;
         }
-        resize(id, width).then(data => {
-            res.setHeader("content-type", data.file.contentType);
-            res.setHeader("content-length", data.file.length);
-            data.stream.on("error", err => {
-                console.error(err);
-                res.end();
-            });
-            data.stream.on("data", data => {
-                res.write(data);
-                //console.log(typeof data, data instanceof Buffer);
-            });
-            data.stream.on("close", () => {
-                console.log("done");
-                res.end();
+        checkPermissions(id, req.user && req.user.email).then(ok => {
+            if (!ok) {
+                res.sendStatus(404);
+                return;
+            }
+            const width = parseInt(req.params.width);
+            if (!(width in data.ResizedImage)) {
+                res.sendStatus(404);
+                return;
+            }
+            resize(id, width).then(data => {
+                res.setHeader("content-type", data.file.contentType);
+                res.setHeader("content-length", data.file.length);
+                data.stream.on("error", err => {
+                    console.error(err);
+                    res.end();
+                });
+                data.stream.on("data", data => {
+                    res.write(data);
+                    //console.log(typeof data, data instanceof Buffer);
+                });
+                data.stream.on("close", () => {
+                    console.log("done");
+                    res.end();
+                });
+            }).catch(err => {
+                console.error("exception?", err);
+                res.sendStatus(500);
             });
         }).catch(err => {
-            console.error("exception?", err);
-            res.sendStatus(500);
+            console.error("error checking permissions", id, err);
+            res.sendStatus(404);
         });
     });
     router.get("/resizes", ensureAuthenticated, (req, res) => {
