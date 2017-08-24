@@ -9,6 +9,10 @@
     min-height: 150px;
 }
 
+div.pad {
+    padding-right: 15px;
+}
+
 :host /deep/ .preview-item {
     background-color: #ddd;
     color: #fff;

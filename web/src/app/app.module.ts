@@ -7,14 +7,16 @@ import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { ApiService } from './api.service';
-import { DropTargetDirective } from './drop-target.directive';
 import { StateService } from './state.service';
 import { ModalService } from './modal.service';
+import { PermissionsService } from './permissions.service';
+import { DropTargetDirective } from './drop-target.directive';
 import { UploadComponent } from './upload/upload.component';
 import { ImageGridComponent } from './image-grid/image-grid.component';
 import { ModalComponent } from './modal/modal.component';
 import { ImageComponent } from './image/image.component';
 import { ImageConfigComponent } from './image-config/image-config.component';
+import { PermissionsComponent } from './permissions/permissions.component';
 
 @NgModule({
     declarations: [
@@ -24,7 +26,8 @@ import { ImageConfigComponent } from './image-config/image-config.component';
         ImageGridComponent,
         ModalComponent,
         ImageComponent,
-        ImageConfigComponent
+        ImageConfigComponent,
+        PermissionsComponent
     ],
     imports: [
         BrowserAnimationsModule,
@@ -39,7 +42,8 @@ import { ImageConfigComponent } from './image-config/image-config.component';
     providers: [
         ApiService,
         StateService,
-        ModalService
+        ModalService,
+        PermissionsService
     ],
     bootstrap: [AppComponent]
 })

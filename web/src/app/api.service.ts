@@ -1,29 +1,54 @@
 import { Injectable } from '@angular/core';
 import { Http, Headers, RequestOptions, Response } from '@angular/http';
 import { HttpErrorResponse } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs/Rx';
+import { AsyncSubject, BehaviorSubject } from 'rxjs/Rx';
 import 'rxjs/add/operator/map';
 
 @Injectable()
 export class ApiService {
+    cache: { [key: string]: AsyncSubject<any> } = {};
+    baseurl: string = window.location.protocol + "//" + window.location.host + "/api/v1";
+
     constructor(private http: Http) { }
 
     get(path) {
-        const baseurl = window.location.protocol + "//" + window.location.host + "/api/v1"
-        return this.http.get(baseurl + path).map((res: Response) => {
+        return this.http.get(this.baseurl + path).map((res: Response) => {
             return res.json();
         }).catch((err: HttpErrorResponse) => {
-            const subject = new BehaviorSubject({ status: err.status, error: true });
+            const subject = new BehaviorSubject<any>({ status: err.status, error: true });
             return subject.asObservable();
         });
     }
 
-    upload(path, field, files) {
+    cached(path) {
+        if (path in this.cache) {
+            return this.cache[path].asObservable();
+        } else {
+            const cachedSubject = new AsyncSubject<any>();
+            this.cache[path] = cachedSubject;
+            this.get(path).subscribe(data => {
+                cachedSubject.next(data);
+                cachedSubject.complete();
+            });
+            return cachedSubject.asObservable();
+        }
+    }
+
+    upload(path: string, fields: { [key: string]: any }) {
         const baseurl = window.location.protocol + "//" + window.location.host + "/api/v1"
 
         const formdata = new FormData();
-        for (let i = 0; i < files.length; ++i) {
-            formdata.append(field, files[i]);
+        const append = (key, value) => {
+            if (value instanceof Array) {
+                for (let i = 0; i < value.length; ++i) {
+                    formdata.append(key, value[i]);
+                }
+            } else {
+                formdata.append(key, value);
+            }
+        };
+        for (let k in fields) {
+            append(k, fields[k]);
         }
 
         const headers = new Headers();

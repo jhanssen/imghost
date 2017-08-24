@@ -225,8 +225,8 @@ module.exports = function(mongoose, option) {
     const multerStorage = require("multer-gridfs-storage")({
         db: connection.db,
         file: function(req, file) {
-            if (req.params.permissions) {
-                const perms = parseInt(req.params.permissions);
+            if (req.body.permissions) {
+                const perms = parseInt(req.body.permissions);
                 if (!isNaN(perms))
                     return { metadata: { permissions: perms } };
             }
@@ -400,8 +400,11 @@ module.exports = function(mongoose, option) {
             res.sendStatus(404);
         });
     });
-    router.get("/resizes", ensureAuthenticated, (req, res) => {
+    router.get("/resizes", (req, res) => {
         res.send({ host: data.host, resizes: data.resizes });
+    });
+    router.get("/permissions", (req, res) => {
+        res.send(Permission);
     });
     router.get("/meta/set/:key/:value/:id", ensureAuthenticated, (req, res) => {
         let value;

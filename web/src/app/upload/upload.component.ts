@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
 import { StateService } from '../state.service';
 import { ModalService } from '../modal.service';
+import { PermissionsService } from '../permissions.service';
 
 @Component({
     selector: 'app-upload',
@@ -10,16 +11,25 @@ import { ModalService } from '../modal.service';
 })
 export class UploadComponent implements OnInit {
     pendingUploads: Array<any> = [];
+    permissions: number = 0;
 
-    constructor(private api: ApiService, private state: StateService, private modals: ModalService) { }
-
-    ngOnInit() {
+    constructor(private api: ApiService, private state: StateService,
+                private modals: ModalService, private perms: PermissionsService) {
+        this.perms.permissions().subscribe((val: number) => {
+            // console.log("permissions updated", val);
+            this.permissions = val;
+        });
     }
+
+    ngOnInit() { }
 
     onSubmit() {
         console.log("submitting", this.pendingUploads);
         // this.pendingUploads
-        this.api.upload("/images/upload", "photos", this.pendingUploads).subscribe(data => {
+        this.api.upload("/images/upload", {
+            permissions: this.permissions,
+            photos: this.pendingUploads
+        }).subscribe(data => {
             console.log("uploaded?", data);
             this.pendingUploads = [];
 
