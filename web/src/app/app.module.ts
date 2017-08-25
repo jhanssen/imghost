@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { RouterModule, Routes }  from '@angular/router';
 import { HttpModule } from '@angular/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MdButtonModule, MdToolbarModule, MdSelectModule, MdInputModule } from '@angular/material';
@@ -17,6 +18,12 @@ import { ModalComponent } from './modal/modal.component';
 import { ImageComponent } from './image/image.component';
 import { ImageConfigComponent } from './image-config/image-config.component';
 import { PermissionsComponent } from './permissions/permissions.component';
+import { UserComponent } from './user/user.component';
+
+const routes: Routes = [
+    { path: '', component: UserComponent },
+    { path: 'user/:id', component: UserComponent }
+];
 
 @NgModule({
     declarations: [
@@ -27,7 +34,8 @@ import { PermissionsComponent } from './permissions/permissions.component';
         ModalComponent,
         ImageComponent,
         ImageConfigComponent,
-        PermissionsComponent
+        PermissionsComponent,
+        UserComponent
     ],
     imports: [
         BrowserAnimationsModule,
@@ -37,7 +45,8 @@ import { PermissionsComponent } from './permissions/permissions.component';
         MdButtonModule,
         MdToolbarModule,
         MdSelectModule,
-        MdInputModule
+        MdInputModule,
+        RouterModule.forRoot(routes)
     ],
     providers: [
         ApiService,
