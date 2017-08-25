@@ -279,7 +279,6 @@ function getImages(query) {
                 } },
                 { $project: { "images._id": 1 } }
             ]).then(images => {
-                console.log("faff", images);
                 try {
                     resolve({ images: images[0].images.map(elem => {
                         return elem._id;
