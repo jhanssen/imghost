@@ -9,7 +9,9 @@
     <md-toolbar>
       {{title}}
       <span class="fill"></span>
-      <button md-raised-button (click)="openModal('upload')">Upload</button>
+      <div *ngIf="!id">
+	<button md-raised-button (click)="openModal('upload')">Upload</button>
+      </div>
     </md-toolbar>
     <div class="vertspace"></div>
     <div *ngIf="images">
