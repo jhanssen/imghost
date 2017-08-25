@@ -5,6 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const passport = require("passport");
 const sharp = require("sharp");
+const crypto = require("crypto");
 
 const data = {
     mongoose: undefined,
@@ -14,20 +15,93 @@ const data = {
     Image: undefined,
     ResizedImage: {},
     resizes: [],
-    updateOptions: { upsert: true, new: true, setDefaultsOnInsert: true }
+    userPromises: {}
 };
 
-passport.serializeUser(function(user, done) {
-    console.log("serializing", user);
+function generateId() {
+    const alpha = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+    return new Promise((resolve, reject) => {
+        crypto.randomBytes(20, (err, buf) => {
+            if (err || !buf) {
+                reject(err);
+            } else {
+                let out = "";
+                for (let i = 0; i < buf.length; ++i) {
+                    out += alpha[buf[i] % 0x40];
+                }
+                resolve(out);
+            }
+        });
+    });
+}
+
+function ensureUser(user) {
     let email;
     try {
         email = user.emails[0].value;
     } catch (e) {
-        done(e, null);
+        throw "No email for user?";
     }
-    if (email) {
-        console.log("serialized", email);
-        data.User.findOneAndUpdate({ email: email }, { displayName: user.displayName }, data.updateOptions).then(() => {
+    if (email in data.userPromises) {
+        return data.userPromises[email];
+    }
+    const remove = () => {
+        delete data.userPromises[email];
+    };
+    const promise = new Promise((resolve, reject) => {
+        // make sure we get a chance to put the promise
+        // into data.userPromises before resolving
+        process.nextTick(() => {
+            if (email) {
+                console.log("serialized", email);
+                data.User.findOne({ email: email }, { email: true }).then(doc => {
+                    if (doc) {
+                        resolve(email);
+                        return;
+                    }
+                    let attemptCount = 10;
+                    const attempt = () => {
+                        generateId().then(id => {
+                            data.User.create({ email: email, displayName: user.displayName, publicId: id }).then(doc => {
+                                console.log("created doc", doc);
+                                resolve(email);
+                            }).catch(err => {
+                                console.error(err);
+                                if (err.code == 11000) {
+                                    // invalid id, try again
+                                    console.error("attempting again", attemptCount);
+                                    if (--attemptCount) {
+                                        process.nextTick(attempt);
+                                        return;
+                                    }
+                                }
+                                reject(err);
+                            });
+                        }).catch(err => {
+                            reject(err);
+                        });
+                    };
+                    attempt();
+                }).catch(err => {
+                    reject(err);
+                });
+            }
+        });
+    });
+    data.userPromises[email] = promise;
+    return promise;
+}
+
+passport.serializeUser(function(user, done) {
+    console.log("serializing", user);
+    let promise;
+    try {
+        promise = ensureUser(user);
+    } catch (err) {
+        done(err, null);
+    }
+    if (promise) {
+        promise.then(email => {
             done(null, email);
         }).catch(err => {
             done(err, null);
@@ -210,7 +284,8 @@ module.exports = function(mongoose, option) {
     });
 
     data.User = mongoose.model("User", {
-        email: String,
+        email: { type: String, required: true, index: true },
+        publicId: { type: String, required: true, index: true, unique: true },
         displayName: String,
         images: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }]
     });
