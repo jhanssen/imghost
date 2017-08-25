@@ -486,6 +486,19 @@ module.exports = function(mongoose, option) {
     router.get("/permissions", (req, res) => {
         res.send(Permission);
     });
+    router.get("/user", ensureAuthenticated, (req, res) => {
+        data.User.findOne({ email: req.user.email }, { displayName: true, publicId: true }).then(doc => {
+            //console.log(doc);
+            res.send({
+                email: req.user.email,
+                displayName: doc.displayName,
+                publicId: doc.publicId
+            });
+        }).catch(err => {
+            console.error(err);
+            res.sendStatus(500);
+        });
+    });
     router.get("/meta/set/:key/:value/:id", ensureAuthenticated, (req, res) => {
         let value;
         const key = req.params.key;
