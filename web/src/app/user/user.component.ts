@@ -51,7 +51,7 @@ export class UserComponent implements OnInit {
         } else {
             // we're logged in (presumably)
             this.api.cached("/user").subscribe(data => {
-                if ("email" in data) {
+                if ("publicId" in data) {
                     //this.email = data.email;
                     this.publicId = data.publicId;
                 }
