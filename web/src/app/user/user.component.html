@@ -10,6 +10,7 @@
       {{title}}
       <span class="fill"></span>
       <div *ngIf="!id">
+	<span class="small">{{publicId}}</span>
 	<button md-raised-button (click)="openModal('upload')">Upload</button>
       </div>
     </md-toolbar>

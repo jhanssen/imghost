@@ -29,6 +29,7 @@ export class UserComponent implements OnInit {
     images = undefined;
     imageModalState: string = "close";
     id: string = undefined;
+    publicId: string = "";
 
     constructor(private api: ApiService, private state: StateService,
                 private modals: ModalService, private route: ActivatedRoute) {
@@ -47,6 +48,14 @@ export class UserComponent implements OnInit {
         let path = "/images";
         if (this.id) {
             path += `/${this.id}`;
+        } else {
+            // we're logged in (presumably)
+            this.api.cached("/user").subscribe(data => {
+                if ("email" in data) {
+                    //this.email = data.email;
+                    this.publicId = data.publicId;
+                }
+            });
         }
         this.api.get(path).subscribe(data => {
             if (data.status === 401) {
