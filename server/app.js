@@ -57,6 +57,7 @@ function ensureUser(user) {
                 data.User.findOne({ email: email }, { email: true }).then(doc => {
                     if (doc) {
                         resolve(email);
+                        remove();
                         return;
                     }
                     let attemptCount = 10;
@@ -65,6 +66,7 @@ function ensureUser(user) {
                             data.User.create({ email: email, displayName: user.displayName, publicId: id }).then(doc => {
                                 console.log("created doc", doc);
                                 resolve(email);
+                                remove();
                             }).catch(err => {
                                 console.error(err);
                                 if (err.code == 11000) {
@@ -76,14 +78,17 @@ function ensureUser(user) {
                                     }
                                 }
                                 reject(err);
+                                remove();
                             });
                         }).catch(err => {
                             reject(err);
+                            remove();
                         });
                     };
                     attempt();
                 }).catch(err => {
                     reject(err);
+                    remove();
                 });
             }
         });
