@@ -128,8 +128,8 @@ passport.deserializeUser(function(id, done) {
 });
 
 const Permission = {
-    Private: 0x0,
-    Public : 0x1
+    Private: 0,
+    Public : 1
 };
 
 function makeObjectID(id) {
@@ -259,6 +259,49 @@ function resize(id, width)
     });
 }
 
+function getImages(query) {
+    return new Promise((resolve, reject) => {
+        if (query.id) {
+            data.User.aggregate([
+                { $match: { publicId: query.id } },
+                { $unwind: "$images" },
+                { $lookup: {
+                    localField: "images",
+                    from: "fs.files",
+                    foreignField: "_id",
+                    as: "image"
+                } },
+                { $unwind: "$image" },
+                { $match: { "image.metadata.permissions": Permission.Public } },
+                { $group: {
+                    _id: "$_id",
+                    images: { $push: "$image" }
+                } },
+                { $project: { "images._id": 1 } }
+            ]).then(images => {
+                console.log("faff", images);
+                try {
+                    resolve({ images: images[0].images.map(elem => {
+                        return elem._id;
+                    })});
+                } catch (err) {
+                    reject(err);
+                }
+            }).catch(err => {
+                reject(err);
+            });
+        } else if (query.email) {
+            data.User.findOne({ email: query.email }, { images: true }).then(images => {
+                resolve(images);
+            }).catch(err => {
+                reject(err);
+            });
+        } else {
+            reject("invalid query");
+        }
+    });
+}
+
 module.exports = function(mongoose, option) {
     data.mongoose = mongoose;
     data.host = option("host");
@@ -384,19 +427,38 @@ module.exports = function(mongoose, option) {
             remove("unable to remove images (1)");
         });
     });
-    router.get("/images", ensureAuthenticated, (req, res) => {
-        data.User.findOne({ email: req.user.email }, { images: true }).then(images => {
-            if (typeof images !== "object" || !(images.images instanceof Array))
-                throw `Unable to find user ${req.user.email}`;
-            // let out = [];
-            // for (let i = 0; i < images.images.length; ++i) {
-            //     out += `<div><a href="/image/${images.images[i]}"><img src="/image/${images.images[i]}" height="100"></img></a></div>`;
-            // }
-            // console.log("faff", out);
-            res.send(images.images);
+    router.get("/images/:id", (req, res) => {
+        getImages({ id: req.params.id }).then(images => {
+            try {
+                if (images instanceof Array) {
+                    res.send(images);
+                } else if (images.images instanceof Array) {
+                    res.send(images.images);
+                }
+            } catch (err) {
+                res.send(500);
+                throw err.message;
+            }
         }).catch(err => {
-            console.error(`unable to get images for ${req.user.email}`);
-            res.sendStatus(500);
+            console.error(err);
+            res.sendStatus(404);
+        });
+    });
+    router.get("/images", ensureAuthenticated, (req, res) => {
+        getImages({ email: req.user.email }).then(images => {
+            try {
+                if (images instanceof Array) {
+                    res.send(images);
+                } else if (images.images instanceof Array) {
+                    res.send(images.images);
+                }
+            } catch (e) {
+                res.send(500);
+                throw e.message;
+            }
+        }).catch(err => {
+            console.error(err);
+            res.sendStatus(404);
         });
     });
     router.get("/image/:id", (req, res) => {
