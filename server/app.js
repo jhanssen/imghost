@@ -61,13 +61,16 @@ function generateId() {
     });
 }
 
-function ensureUser(user) {
-    let email;
+function emailForProfile(profile) {
     try {
-        email = user.emails[0].value;
+        return profile.emails[0].value;
     } catch (e) {
         throw "No email for user?";
     }
+};
+
+function ensureUser(user) {
+    const email = emailForProfile(user);
     if (email in data.userPromises) {
         return data.userPromises[email];
     }
@@ -392,7 +395,25 @@ function getImages(query) {
 
 function authVerify(profile, connection, option) {
     return new Promise((resolve, reject) => {
-        resolve(profile);
+        config().then(cfg => {
+            if (cfg.autoCreateUsers) {
+                resolve(profile);
+            } else {
+                // check if we're an already created user
+                const email = emailForProfile(profile);
+                data.User.findOne({ email: email }).then(doc => {
+                    if (doc) {
+                        resolve(profile);
+                    } else {
+                        resolve(false);
+                    }
+                }).catch(err => {
+                    reject(err);
+                });
+            }
+        }).catch(err => {
+            reject(err);
+        });
     });
 }
 
