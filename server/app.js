@@ -301,6 +301,10 @@ function getImages(query) {
     });
 }
 
+function authVerify(profile, connection, option) {
+    return true;
+}
+
 module.exports = function(mongoose, option) {
     data.mongoose = mongoose;
     data.host = option("host");
@@ -360,7 +364,7 @@ module.exports = function(mongoose, option) {
     const auths = ["google"];
     const enabledAuths = [];
     auths.forEach(auth => {
-        if (require(`./auth/${auth}`)(passport, connection, option))
+        if (require(`./auth/${auth}`)(passport, connection, option, authVerify))
             enabledAuths.push(auth);
     });
 
@@ -386,7 +390,7 @@ module.exports = function(mongoose, option) {
         console.log("Setting up Google auth routes");
         apiRouter.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
         apiRouter.get('/auth/google/callback',
-                passport.authenticate('google', { failureRedirect: '/auth' }),
+                passport.authenticate('google', { failureRedirect: '/' }),
                 function(req, res) {
                     // Successful authentication, redirect home.
                     res.redirect('/');
