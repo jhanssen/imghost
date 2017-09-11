@@ -63,7 +63,7 @@ function ensureUser(user) {
                     let attemptCount = 10;
                     const attempt = () => {
                         generateId().then(id => {
-                            data.User.create({ email: email, displayName: user.displayName, publicId: id }).then(doc => {
+                            data.User.create({ email: email, displayName: user.displayName, publicId: id, roles: 0 }).then(doc => {
                                 console.log("created doc", doc);
                                 resolve(email);
                                 remove();
@@ -148,6 +148,27 @@ function ensureAuthenticated(req, res, next) {
     } else {
         res.sendStatus(401);
     }
+}
+
+function ensureRole(role)
+{
+    return function(req, res, next) {
+        const roles = (typeof role === "number") ? [role] : role;
+        if (typeof req.user !== "object" || !req.user.email) {
+            res.sendStatus(401);
+            return;
+        }
+        data.User.findOne({ email: req.user.email, roles: { $bitsAllSet: roles } }).then(user => {
+            if (!user) {
+                res.sendStatus(401);
+                return;
+            } else {
+                next(null);
+            };
+        }).catch(err => {
+            res.sendStatus(500);
+        });
+    };
 }
 
 function checkPermissions(id, email) {
@@ -340,8 +361,17 @@ module.exports = function(mongoose, option) {
         email: { type: String, required: true, index: true },
         publicId: { type: String, required: true, index: true, unique: true },
         displayName: String,
+        roles: Number,
         images: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }]
     });
+    const Roles = {
+        Admin:     0x01,
+        Moderator: 0x02
+    };
+    const RoleBits = {
+        Admin:     0,
+        Moderator: 1
+    };
 
     const connection = mongoose.connection;
     const sessionSecret = option("session-secret");
@@ -478,7 +508,8 @@ module.exports = function(mongoose, option) {
             res.send({
                 email: req.user.email,
                 displayName: doc.displayName,
-                publicId: doc.publicId
+                publicId: doc.publicId,
+                roles: doc.roles
             });
         }).catch(err => {
             console.error(err);
@@ -597,6 +628,9 @@ module.exports = function(mongoose, option) {
             console.error("error removing from images", id);
             res.sendStatus(500);
         });
+    });
+    apiRouter.get("/admin", ensureRole(RoleBits.Admin), (req, res) => {
+        res.send({ ok: true });
     });
 
     app.use("/api/v1", apiRouter);
