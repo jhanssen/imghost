@@ -5,7 +5,7 @@
 </div>
 <div *ngIf="image">
   <div class="container">
-    <img class="fit" src="/api/v1/image/{{image}}">
+    <img class="fit" src="/raw/{{image}}">
   </div>
 </div>
 <app-image-config [@slideInOut]="configState" (@slideInOut.done)="animationDone($event)"></app-image-config>

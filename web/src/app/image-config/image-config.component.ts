@@ -43,13 +43,13 @@ export class ImageConfigComponent implements OnInit {
             return;
         this.share = ev;
         if (ev == "Full") {
-            this.shareText = `${this.host}/api/v1/image/${this.image}`;
+            this.shareText = `${this.host}/raw/${this.image}`;
         } else {
             const x = ev.indexOf("x");
             if (x === -1)
                 return;
             const w = parseInt(ev.substr(0, x));
-            this.shareText = `${this.host}/api/v1/resized/${w}/${this.image}`;
+            this.shareText = `${this.host}/resized/${w}/${this.image}`;
         }
     }
 

@@ -369,12 +369,12 @@ module.exports = function(mongoose, option) {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    const router = express.Router();
-    router.get("/", (req, res) => {
+    const apiRouter = express.Router();
+    apiRouter.get("/", (req, res) => {
         res.redirect("/images");
     });
 
-    router.get("/auth", (req, res) => {
+    apiRouter.get("/auth", (req, res) => {
         // let out = {};
         // enabledAuths.forEach(auth => {
         //     out += `<div><a href="/auth/${auth}">${auth}</a></div>`;
@@ -384,8 +384,8 @@ module.exports = function(mongoose, option) {
 
     if (enabledAuths.indexOf("google") !== -1) {
         console.log("Setting up Google auth routes");
-        router.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
-        router.get('/auth/google/callback',
+        apiRouter.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+        apiRouter.get('/auth/google/callback',
                 passport.authenticate('google', { failureRedirect: '/auth' }),
                 function(req, res) {
                     // Successful authentication, redirect home.
@@ -393,7 +393,7 @@ module.exports = function(mongoose, option) {
                 });
     }
 
-    router.post("/images/upload", ensureAuthenticated, upload.array("photos", 12), (req, res) => {
+    apiRouter.post("/images/upload", ensureAuthenticated, upload.array("photos", 12), (req, res) => {
         const images = req.files.map(file => {
             return file.id;
         });
@@ -426,7 +426,7 @@ module.exports = function(mongoose, option) {
             remove("unable to remove images (1)");
         });
     });
-    router.get("/images/:id", (req, res) => {
+    apiRouter.get("/images/:id", (req, res) => {
         getImages({ id: req.params.id }).then(images => {
             try {
                 if (images instanceof Array) {
@@ -443,7 +443,7 @@ module.exports = function(mongoose, option) {
             res.sendStatus(404);
         });
     });
-    router.get("/images", ensureAuthenticated, (req, res) => {
+    apiRouter.get("/images", ensureAuthenticated, (req, res) => {
         getImages({ email: req.user.email }).then(images => {
             try {
                 if (images instanceof Array) {
@@ -460,94 +460,13 @@ module.exports = function(mongoose, option) {
             res.sendStatus(404);
         });
     });
-    router.get("/image/:id", (req, res) => {
-        //data.Image.findOne({ _id: req.params.id }
-        const id = makeObjectID(req.params.id);
-        if (!id) {
-            res.sendStatus(500);
-            return;
-        }
-        console.log(id);
-        checkPermissions(id, req.user && req.user.email).then(ok => {
-            if (!ok) {
-                res.sendStatus(404);
-                return;
-            }
-            data.gridfs.findOne({ _id: id }, (err, file) => {
-                if (err || !file) {
-                    console.error("nope");
-                    res.sendStatus(500);
-                    return;
-                }
-                // console.log(file);
-                res.setHeader("content-type", file.contentType);
-                res.setHeader("content-length", file.length);
-                const stream = data.gridfs.readById(id);
-                stream.on("error", err => {
-                    console.error(err);
-                    res.end();
-                });
-                stream.on("data", data => {
-                    res.write(data);
-                    //console.log(typeof data, data instanceof Buffer);
-                });
-                stream.on("close", () => {
-                    console.log("done");
-                    res.end();
-                });
-            });
-        }).catch(err => {
-            console.error("error checking permissions", id, err);
-            res.sendStatus(404);
-        });
-    });
-    router.get("/resized/:width/:id", (req, res) => {
-        const id = makeObjectID(req.params.id);
-        if (!id) {
-            res.sendStatus(500);
-            return;
-        }
-        checkPermissions(id, req.user && req.user.email).then(ok => {
-            if (!ok) {
-                res.sendStatus(404);
-                return;
-            }
-            const width = parseInt(req.params.width);
-            if (!(width in data.ResizedImage)) {
-                res.sendStatus(404);
-                return;
-            }
-            resize(id, width).then(data => {
-                res.setHeader("content-type", data.file.contentType);
-                res.setHeader("content-length", data.file.length);
-                data.stream.on("error", err => {
-                    console.error(err);
-                    res.end();
-                });
-                data.stream.on("data", data => {
-                    res.write(data);
-                    //console.log(typeof data, data instanceof Buffer);
-                });
-                data.stream.on("close", () => {
-                    console.log("done");
-                    res.end();
-                });
-            }).catch(err => {
-                console.error("exception?", err);
-                res.sendStatus(500);
-            });
-        }).catch(err => {
-            console.error("error checking permissions", id, err);
-            res.sendStatus(404);
-        });
-    });
-    router.get("/resizes", (req, res) => {
+    apiRouter.get("/resizes", (req, res) => {
         res.send({ host: data.host, resizes: data.resizes });
     });
-    router.get("/permissions", (req, res) => {
+    apiRouter.get("/permissions", (req, res) => {
         res.send(Permission);
     });
-    router.get("/user", ensureAuthenticated, (req, res) => {
+    apiRouter.get("/user", ensureAuthenticated, (req, res) => {
         data.User.findOne({ email: req.user.email }, { displayName: true, publicId: true }).then(doc => {
             //console.log(doc);
             res.send({
@@ -560,7 +479,7 @@ module.exports = function(mongoose, option) {
             res.sendStatus(500);
         });
     });
-    router.get("/meta/set/:key/:value/:id", ensureAuthenticated, (req, res) => {
+    apiRouter.get("/meta/set/:key/:value/:id", ensureAuthenticated, (req, res) => {
         let value;
         const key = req.params.key;
         switch (key) {
@@ -604,7 +523,7 @@ module.exports = function(mongoose, option) {
             });
         });
     });
-    router.get("/meta/get/:id", ensureAuthenticated, (req, res) => {
+    apiRouter.get("/meta/get/:id", ensureAuthenticated, (req, res) => {
         const id = makeObjectID(req.params.id);
         if (!id) {
             res.sendStatus(500);
@@ -631,7 +550,7 @@ module.exports = function(mongoose, option) {
             res.sendStatus(500);
         });
     });
-    router.get("/delete/:id", ensureAuthenticated, (req, res) => {
+    apiRouter.get("/delete/:id", ensureAuthenticated, (req, res) => {
         const id = makeObjectID(req.params.id);
         if (!id) {
             res.sendStatus(500);
@@ -674,7 +593,89 @@ module.exports = function(mongoose, option) {
         });
     });
 
-    app.use("/api/v1", router);
+    app.use("/api/v1", apiRouter);
+
+    app.get("/raw/:id", (req, res) => {
+        //data.Image.findOne({ _id: req.params.id }
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
+        console.log(id);
+        checkPermissions(id, req.user && req.user.email).then(ok => {
+            if (!ok) {
+                res.sendStatus(404);
+                return;
+            }
+            data.gridfs.findOne({ _id: id }, (err, file) => {
+                if (err || !file) {
+                    console.error("nope");
+                    res.sendStatus(500);
+                    return;
+                }
+                // console.log(file);
+                res.setHeader("content-type", file.contentType);
+                res.setHeader("content-length", file.length);
+                const stream = data.gridfs.readById(id);
+                stream.on("error", err => {
+                    console.error(err);
+                    res.end();
+                });
+                stream.on("data", data => {
+                    res.write(data);
+                    //console.log(typeof data, data instanceof Buffer);
+                });
+                stream.on("close", () => {
+                    console.log("done");
+                    res.end();
+                });
+            });
+        }).catch(err => {
+            console.error("error checking permissions", id, err);
+            res.sendStatus(404);
+        });
+    });
+    app.get("/resized/:width/:id", (req, res) => {
+        const id = makeObjectID(req.params.id);
+        if (!id) {
+            res.sendStatus(500);
+            return;
+        }
+        checkPermissions(id, req.user && req.user.email).then(ok => {
+            if (!ok) {
+                res.sendStatus(404);
+                return;
+            }
+            const width = parseInt(req.params.width);
+            if (!(width in data.ResizedImage)) {
+                res.sendStatus(404);
+                return;
+            }
+            resize(id, width).then(data => {
+                res.setHeader("content-type", data.file.contentType);
+                res.setHeader("content-length", data.file.length);
+                data.stream.on("error", err => {
+                    console.error(err);
+                    res.end();
+                });
+                data.stream.on("data", data => {
+                    res.write(data);
+                    //console.log(typeof data, data instanceof Buffer);
+                });
+                data.stream.on("close", () => {
+                    console.log("done");
+                    res.end();
+                });
+            }).catch(err => {
+                console.error("exception?", err);
+                res.sendStatus(500);
+            });
+        }).catch(err => {
+            console.error("error checking permissions", id, err);
+            res.sendStatus(404);
+        });
+    });
 
     const port = option.int("port", 3001);
     app.listen(port, () => {
