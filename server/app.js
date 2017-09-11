@@ -13,10 +13,36 @@ const data = {
     gridfs: undefined,
     User: undefined,
     Image: undefined,
+    Config: undefined,
     ResizedImage: {},
     resizes: [],
     userPromises: {}
 };
+
+function realValue(v) {
+    if (typeof v !== "string" || !v.length)
+        return v;
+    let vv = parseFloat(v);
+    if (!isNaN(vv))
+        return vv;
+    switch (v) {
+    case "true":
+        return true;
+    case "false":
+        return false;
+    }
+    switch (v[0]) {
+    case "{":
+    case "[":
+    case "\"":
+        try {
+            return JSON.parse(v);
+        } catch (e) {
+        }
+        break;
+    }
+    return v;
+}
 
 function generateId() {
     const alpha = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
@@ -169,6 +195,48 @@ function ensureRole(role)
             res.sendStatus(500);
         });
     };
+}
+
+function config()
+{
+    return new Promise((resolve, reject) => {
+        data.Config.findOne().then(config => {
+            resolve(config || data.defaultConfig);
+        }).catch(err => {
+            reject(err);
+        });
+    });
+}
+
+function updateConfig(key, value)
+{
+    return new Promise((resolve, reject) => {
+        if (!(key in data.defaultConfig)) {
+            reject(`Invalid key ${key}`);
+            return;
+        }
+        data.Config.update({}, { key: value }, { new: true }).then(doc => {
+            if (!doc.nModified) {
+                // need to create a new document
+                let newdoc = {};
+                // iterate through defaults
+                for (let k in data.defaultConfig) {
+                    newdoc[k] = data.defaultConfig[k];
+                }
+                // set our new key
+                newdoc[key] = value;
+                data.Config.update({}, newdoc, { upsert: true, new: true }).then(doc => {
+                    resolve();
+                }).catch(err => {
+                    reject(err);
+                });
+            } else {
+                resolve();
+            }
+        }).catch(err => {
+            reject(err);
+        });
+    });
 }
 
 function checkPermissions(id, email) {
@@ -364,6 +432,12 @@ module.exports = function(mongoose, option) {
         roles: Number,
         images: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }]
     });
+    data.Config = mongoose.model("Config", {
+        autoCreateUsers: Boolean
+    });
+    data.defaultConfig = {
+        autoCreateUsers: true
+    };
     const Roles = {
         Admin:     0x01,
         Moderator: 0x02
@@ -629,8 +703,23 @@ module.exports = function(mongoose, option) {
             res.sendStatus(500);
         });
     });
-    apiRouter.get("/admin", ensureRole(RoleBits.Admin), (req, res) => {
-        res.send({ ok: true });
+    apiRouter.get("/admin/config/get", ensureRole(RoleBits.Admin), (req, res) => {
+        //res.send({ ok: true });
+        config().then(cfg => {
+            res.send(cfg);
+        }).catch(err => {
+            console.error("failed to get config", err);
+            res.sendStatus(500);
+        });
+    });
+    apiRouter.get("/admin/config/set/:key/:value", ensureRole(RoleBits.Admin), (req, res) => {
+        //res.send({ ok: true });
+        updateConfig(req.params.key, realValue(req.params.value)).then(() => {
+            res.send({ ok: true });
+        }).catch(err => {
+            console.error("failed to set config", err);
+            res.sendStatus(500);
+        });
     });
 
     app.use("/api/v1", apiRouter);
