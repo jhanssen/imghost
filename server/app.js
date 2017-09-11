@@ -302,7 +302,9 @@ function getImages(query) {
 }
 
 function authVerify(profile, connection, option) {
-    return true;
+    return new Promise((resolve, reject) => {
+        resolve(profile);
+    });
 }
 
 module.exports = function(mongoose, option) {

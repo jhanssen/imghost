@@ -16,11 +16,11 @@ module.exports = function(passport, connection, option, verify) {
         clientSecret: secret,
         callbackURL: `${host}/api/v1/auth/google/callback`
     }, function(accessToken, refreshToken, profile, cb) {
-        if (verify(profile, connection, option)) {
+        verify(profile, connection, option).then(profile => {
             cb(null, profile);
-        } else {
-            cb(null, false);
-        }
+        }).catch(err => {
+            cb(err, null);
+        });
     }));
     return true;
 };
